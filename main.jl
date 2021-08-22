@@ -10,13 +10,13 @@ using DifferentialEquations, DiffEqFlux
 py"""
 import sys
 
-sys.path.append("/home/tdesilva/repos/nerf")
+sys.path.append("nerf")
 """
 load_llff = pyimport("load_llff");
 
 # %%
 images, poses, bounds, render_poses, i_test = load_llff.load_llff_data(
-	"/home/tdesilva/repos/nerf/data/nerf_llff_data/fern/",
+	"nerf/data/nerf_llff_data/fern/",
 	8;
 	recenter=true,
 	bd_factor=0.75,
