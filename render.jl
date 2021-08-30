@@ -91,7 +91,7 @@ function get_features(H, W, focal, c2w, near, far; ndc = true)
     rays_o, rays_d = get_rays(H, W, focal, c2w)
     rays_o, rays_d = reshape(rays_o, 3, :), reshape(rays_d, 3, :)
     if ndc
-        rays_o, rays_d = ndc_rays(H, W, focal, near, rays_o, rays_d)
+        rays_o, rays_d = ndc_rays(H, W, focal, 1., rays_o, rays_d)
     end
     n = size(rays_d) |> last
     rays = cat(rays_o, rays_d, rays_d, fill(near, 1, n), fill(far, 1, n); dims = 1)
