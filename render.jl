@@ -25,9 +25,9 @@ function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractMatr
     d_x, d_y, d_z =
         selectdim(rays_d, 1, 1), selectdim(rays_d, 1, 2), selectdim(rays_d, 1, 3)
 
-    o1 =
-        -focal ./ (W / 2) .* o_x ./ o_z, o2 =
-            -focal ./ (H / 2) .* o_y ./ o_z, o3 = 1 .+ 2 .* near ./ o_z
+    o1 = -focal ./ (W / 2) .* o_x ./ o_z
+    o2 = -focal ./ (H / 2) .* o_y ./ o_z
+    o3 = 1 .+ 2 .* near ./ o_z
 
     d1 = -focal ./ (W / 2) .* (d_x ./ d_z .- o_x ./ o_z)
     d2 = -focal ./ (H / 2) .* (d_y ./ d_z .- o_y ./ o_z)
@@ -107,8 +107,8 @@ function render(
     H,
     W,
     focal,
-    c2w::AbstractMatrix{T,2},
-    c2w_staticcam::AbstractMatrix{T,2};
+    c2w::AbstractMatrix{T},
+    c2w_staticcam::AbstractMatrix{T};
     near = 0,
     far = 1,
     ndc = true,
@@ -123,7 +123,7 @@ function render(
     H,
     W,
     focal,
-    c2w::AbstractMatrix{T,2};
+    c2w::AbstractMatrix{T};
     near = 0,
     far = 1,
     ndc = true,
