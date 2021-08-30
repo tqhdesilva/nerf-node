@@ -7,6 +7,7 @@ using PyCall
 using DifferentialEquations, DiffEqFlux
 
 include("helpers.jl")
+include("render.jl")
 
 # use PyCall for import load_nerf
 py"""
@@ -45,11 +46,10 @@ test_poses = poses[:, :, i_test];
 train_poses = poses[:, :, i_train];
 
 # %%
-include("helpers.jl");
-
-ray_results = [get_rays(H, W, f, train_poses[:, :, i]) for i in 1:last(size(train_poses))];
-rays_o = reshape(cat([rr[1] for rr in ray_results]...; dims=[2, 3]), 3, :);
-rays_d = reshape(cat([rr[2] for rr in ray_results]...; dims=[2,3]), 3, :);
+rays = get_features(H, W, f, train_poses[:, :, 1], 0, 1);
+# ray_results = [get_rays(H, W, f, train_poses[:, :, i]) for i in 1:last(size(train_poses))];
+# rays_o = reshape(cat([rr[1] for rr in ray_results]...; dims=[2, 3]), 3, :);
+# rays_d = reshape(cat([rr[2] for rr in ray_results]...; dims=[2,3]), 3, :);
 
 
 # render_path -> render -> batchify_rays -> render_rays

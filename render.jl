@@ -9,15 +9,16 @@ function get_rays(H, W, focal, c2w::AbstractMatrix)
     # left to right broadcasting instead of right to left from numpy
     rays_d =
         sum(reshape(dirs, size(dirs)[1], 1, size(dirs)[2:end]...) .* c2w[1:3, :], dims = 1) # 3 x W x H
+    rays_d = reshape(rays_d, size(rays_d)[2:end])
     rays_o = repeat(c2w[end, :], 1, W, H)
     rays_o, rays_d
 end
 
 
-function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractMatrix)
+function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractArray)
     # Shift rays to near plane
     t = -(near .+ rays_o[3, :]) ./ rays_d[3, :] # 1 x N
-    rays_o = rays_o .+ t .* rays_d # 3 x N
+    rays_o = rays_o .+ reshape(t, 1, :) .* rays_d # 3 x N
 
     # Project onto NDC coordinates
     o_x, o_y, o_z =
@@ -31,11 +32,20 @@ function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractMatr
 
     d1 = -focal ./ (W / 2) .* (d_x ./ d_z .- o_x ./ o_z)
     d2 = -focal ./ (H / 2) .* (d_y ./ d_z .- o_y ./ o_z)
-    d3 = -2 .* n ./ o_z
+    d3 = -2 .* near ./ o_z
 
-    o_prime = [o1 o2 o3]
-    d_prime = [d1 d2 d3]
-
+    o_prime = cat(
+        reshape(o1, 1, size(o1)...),
+        reshape(o2, 1, size(o2)...),
+        reshape(o3, 1, size(o3)...);
+        dims = 1,
+    )
+    d_prime = cat(
+        reshape(d1, 1, size(d1)...),
+        reshape(d2, 1, size(d2)...),
+        reshape(d3, 1, size(d3)...);
+        dims = 1,
+    )
     return o_prime, d_prime
 end
 
@@ -65,7 +75,7 @@ function render_rays(rays::AbstractMatrix{T}) where {T<:Real} # rays is 8(or 11 
     # rays_o, rays_d, view_dir, near, far
 end
 
-function batch_render_rays(rays::AbstractMatrix{T}, chunksize; kwargs...)
+function batch_render_rays(rays::AbstractMatrix{T}, chunksize; kwargs...) where {T<:Real}
     render_results = Vector{RenderResult}()
     n = last(size(rays))
     for i = 1:chunksize:n
@@ -79,18 +89,12 @@ end
 
 function get_features(H, W, focal, c2w, near, far; ndc = true)
     rays_o, rays_d = get_rays(H, W, focal, c2w)
+    rays_o, rays_d = reshape(rays_o, 3, :), reshape(rays_d, 3, :)
     if ndc
         rays_o, rays_d = ndc_rays(H, W, focal, near, rays_o, rays_d)
     end
-    rays_o, rays_d = reshape(rays_o, 3, :), reshape(rays_d, 3, :)
-    rays = cat(
-        rays_o,
-        rays_d,
-        rays_d,
-        fill(near, 1, length(viewdirs) / 3),
-        fill(far, 1, length(viewdirs) / 3);
-        dims = 1,
-    )
+    n = size(rays_d) |> last
+    rays = cat(rays_o, rays_d, rays_d, fill(near, 1, n), fill(far, 1, n); dims = 1)
     return rays
 end
 
