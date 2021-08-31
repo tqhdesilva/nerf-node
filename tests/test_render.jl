@@ -22,6 +22,6 @@ np = pyimport("numpy")
     expected_rays_o, expected_rays_d =
         reverse_dims(np.array(expected_rays_o)), reverse_dims(expected_rays_d)
     got_rays_o, got_rays_d = get_rays(H, W, focal, c2w)
-    @test got_rays_o ≈ expected_rays_o atol = 0.5
-    @test got_rays_d ≈ expected_rays_d atol = 0.5
+    @test got_rays_o ≈ expected_rays_o rtol = 0.01
+    @test got_rays_d ≈ expected_rays_d rtol = 0.01
 end;

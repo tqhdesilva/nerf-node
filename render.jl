@@ -1,9 +1,9 @@
 function get_rays(H::Integer, W::Integer, focal, c2w::AbstractMatrix)
-    i, j = [i for i = 1:W, j = 1:H], [j for i = 1:W, j = 1:H]
+    i, j = Float32[i for i = 1:W, j = 1:H], Float32[j for i = 1:W, j = 1:H]
     dirs = cat(
-        reshape((i .- W .* 0.5) ./ focal, 1, size(i)...),
-        reshape(-(j .- H .* 0.5) ./ focal, 1, size(j)...),
-        reshape([-1.0 for _ in i], 1, size(i)...);
+        reshape((i .- W .* 0.5f0) ./ focal, 1, size(i)...),
+        reshape(-(j .- H .* 0.5f0) ./ focal, 1, size(j)...),
+        reshape([-1.0f0 for _ in i], 1, size(i)...);
         dims = 1,
     ) # 3 x W x H
     rays_d =
