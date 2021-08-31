@@ -1,12 +1,11 @@
 function get_rays(H::Integer, W::Integer, focal, c2w::AbstractMatrix)
     i, j = [i for i = 1:W, j = 1:H], [j for i = 1:W, j = 1:H]
     dirs = cat(
-        reshape(i .- W * 0.5 / focal, 1, size(i)...),
-        reshape(-j .- H * 0.5 / focal, 1, size(j)...),
-        reshape([-1 for _ in i], 1, size(i)...);
+        reshape((i .- W .* 0.5) ./ focal, 1, size(i)...),
+        reshape(-(j .- H .* 0.5) ./ focal, 1, size(j)...),
+        reshape([-1.0 for _ in i], 1, size(i)...);
         dims = 1,
     ) # 3 x W x H
-    # left to right broadcasting instead of right to left from numpy
     rays_d =
         sum(reshape(dirs, size(dirs)[1], 1, size(dirs)[2:end]...) .* c2w[1:3, :], dims = 1) # 3 x W x H
     rays_d = reshape(rays_d, size(rays_d)[2:end])
