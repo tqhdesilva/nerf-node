@@ -3,22 +3,14 @@
 llff_hold = 8 # size of holdout/test set
 
 # %%
-using PyCall
 using DifferentialEquations, DiffEqFlux
 
 include("helpers.jl")
 include("render.jl")
-
-# use PyCall for import load_nerf
-py"""
-import sys
-
-sys.path.append("nerf")
-"""
-load_llff = pyimport("load_llff");
+include("pymodules.jl")
 
 # %%
-images, poses, bounds, render_poses, i_test = load_llff.load_llff_data(
+images, poses, bounds, render_poses, i_test = PyModules.load_llff.load_llff_data(
     "nerf/data/nerf_llff_data/fern/",
     8;
     recenter = true,
