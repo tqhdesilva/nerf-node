@@ -38,8 +38,14 @@ end;
         -1.0712894 -1.0710124 -1.0707353 -1.0704583 -1.0701811
     ]
     H, W, focal = 504, 378, 407.5658f0
-    expected_ndc_o, expected_ndc_d =
-        PyModules.run_nerf_helpers.ndc_rays(H, W, focal, 1.0f0, rays_o, rays_d)
+    expected_ndc_o, expected_ndc_d = PyModules.run_nerf_helpers.ndc_rays(
+        H,
+        W,
+        focal,
+        1.0f0,
+        reverse_dims(rays_o),
+        reverse_dims(rays_d),
+    )
     expected_ndc_o, expected_ndc_d =
         reverse_dims(np.array(expected_ndc_o)), reverse_dims(np.array(expected_ndc_d))
 
