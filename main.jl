@@ -4,6 +4,10 @@ llff_hold = 8 # size of holdout/test set
 
 # %%
 using DifferentialEquations, DiffEqFlux
+using Pipe: @pipe
+using Flux
+using Flux.Data: DataLoader
+using DiffEqFlux, DifferentialEquations
 
 include("helpers.jl")
 include("render.jl")
@@ -34,11 +38,36 @@ H, W, f = hwf;
 H, W = convert(Integer, H), convert(Integer, W);
 hwf = [H, W, f];
 
-test_poses = poses[:, :, i_test];
 train_poses = poses[:, :, i_train];
+test_poses = poses[:, :, i_test];
+
+train_images = images[:, :, :, i_train];
+test_images = images[:, :, :, i_test];
 
 # %%
-rays = get_features(H, W, f, train_poses[:, :, 1], 0, 1);
+get_features(c2w) = get_features(H, W, f, c2w, 0.0f0, 1.0f0)
+# train_rays = get_features(H, W, f, train_poses[:, :, 1], 0, 1);
+train_ray_features =
+    @pipe train_poses |> mapslices(get_features, _, dims = [1, 2]) |> reshape(_, 11, :);
+train_rgb = reshape(train_images, 3, :);
+
+# %%
+train_dataloader = DataLoader(
+    (features = train_ray_features, rgb = train_rgb);
+    batchsize = 32,
+    shuffle = true,
+);
+# train_dataloader |> first
+
+# %%
+# define nn
+function get_model()
+
+end
+
+# define a function that takes nn and outputs rgb
+# call train! with Flux.params(nn)
+
 # ray_results = [get_rays(H, W, f, train_poses[:, :, i]) for i in 1:last(size(train_poses))];
 # rays_o = reshape(cat([rr[1] for rr in ray_results]...; dims=[2, 3]), 3, :);
 # rays_d = reshape(cat([rr[2] for rr in ray_results]...; dims=[2,3]), 3, :);
