@@ -1,4 +1,5 @@
 using Flux
+using Pipe: @pipe
 
 struct PositionalEncoder
     L::Int
@@ -70,28 +71,37 @@ struct NeRFNODE
     nn::NeRFNet
 end
 
+NeRFNODE(L_o::Int, L_d::Int) = NeRFNODE(NeRFNet(L_o, L_d))
+
 Flux.@functor NeRFNODE
 
 function (nnode::NeRFNODE)(x)
     p, d, viewdir, near, far, C, T = view(x, 1:3, :),
     view(x, 4:6, :),
-    view(x, 7:9),
+    view(x, 7:9, :),
     view(x, 10, :) |> permutedims,
     view(x, 11, :) |> permutedims,
-    view(x, 12:14, :)
-    view(x, 15:17)
+    view(x, 12, :) |> permutedims,
+    view(x, 13:15, :)
     dpdt = (far .- near) .* d
-    dddt = fill(0, size(d)...)
-    dviewdirdt = fill(0, size(viewdir)...)
-    dneardt = fill(0, size(near)...)
-    dfardt = fill(0, size(far)...)
+    dddt = @pipe similar(d) |> fill!(_, 0)
+    dviewdirdt = @pipe similar(viewdir) |> fill!(_, 0)
+    dneardt = @pipe similar(near) |> fill!(_, 0)
+    dfardt = @pipe similar(far) |> fill!(_, 0)
     σ, rgb = nnode.nn(p, viewdir)
     dCdt = exp.(-T) .* σ .* rgb
     dTdt = σ
     return cat(dpdt, dddt, dviewdirdt, dneardt, dfardt, dCdt, dTdt; dims = 1)
 end
 
-# o + (t * (far - near) + near)* d
-# initial position is just o + near * d
-# state space: [position, ray_direction, direction, near, far, C, T]
-# C(0) = 0, T(0) = 0
+function raw_to_state_space(x)
+    bs = size(x)[end]
+    CTinitial = similar(x, (4, bs))
+    fill!(CTinitial, 0)
+    return cat(x, CTinitial; dims = 1)
+end
+
+function DiffEqArray_to_Array(x)
+    xarr = gpu(x) # is this necessary?
+    return reshape(xarr, size(xarr)[1:2])
+end

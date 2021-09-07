@@ -12,6 +12,7 @@ using DiffEqFlux, DifferentialEquations
 include("helpers.jl")
 include("render.jl")
 include("pymodules.jl")
+include("model.jl")
 
 # %%
 images, poses, bounds, render_poses, i_test = PyModules.load_llff.load_llff_data(
@@ -61,17 +62,28 @@ train_dataloader = DataLoader(
 
 # %%
 # define nn
-function get_model()
+batch_features, batch_labels = first(train_dataloader);
 
-end
+# %%
+nn = NeRFNODE(10, 4);
+nn_ode = NeuralODE(
+    nn,
+    (0.0f0, 1.0f0),
+    Tsit5(),
+    save_everystep = false,
+    reltol = 1e-3,
+    abstol = 1e-3,
+    save_start = false,
+);
+model = Chain(
+    raw_to_state_space,
+    nn_ode,
+    x -> reshape(x, size(x)[1:end-1]),
+    x -> x[end-2:end, :],
+)
 
 # define a function that takes nn and outputs rgb
 # call train! with Flux.params(nn)
-
-# ray_results = [get_rays(H, W, f, train_poses[:, :, i]) for i in 1:last(size(train_poses))];
-# rays_o = reshape(cat([rr[1] for rr in ray_results]...; dims=[2, 3]), 3, :);
-# rays_d = reshape(cat([rr[2] for rr in ray_results]...; dims=[2,3]), 3, :);
-
 
 # render_path -> render -> batchify_rays -> render_rays
 # render_path takes a sequence of camera poses
