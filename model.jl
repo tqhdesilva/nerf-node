@@ -101,7 +101,7 @@ function raw_to_state_space(x)
     return cat(x, CTinitial; dims = 1)
 end
 
-function DiffEqArray_to_Array(x)
-    xarr = gpu(x) # is this necessary?
-    return reshape(xarr, size(xarr)[1:2])
+function DiffEqArray_to_Array(x, T)
+    xarr = T(x)
+    return reshape(xarr, size(xarr)[1:end-1])
 end
