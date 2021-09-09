@@ -50,6 +50,8 @@ end;
         reverse_dims(np.array(expected_ndc_o)), reverse_dims(np.array(expected_ndc_d))
 
     got_ndc_o, got_ndc_d = ndc_rays(H, W, focal, 1.0f0, rays_o, rays_d)
+    @test isa(got_ndc_o, AbstractArray{Float32})
+    @test isa(got_ndc_d, AbstractArray{Float32})
     @test got_ndc_o ≈ expected_ndc_o rtol = 0.01
     @test got_ndc_d ≈ expected_ndc_d rtol = 0.01
 end

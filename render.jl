@@ -13,7 +13,7 @@ function get_rays(H::Integer, W::Integer, focal, c2w::AbstractMatrix)
     rays_o, rays_d
 end
 
-
+# TODO make this parametric? Float32 vs Float64
 function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractArray)
     # Shift rays to near plane
     t = -(near .+ rays_o[3, :]) ./ rays_d[3, :] # 1 x N
@@ -25,13 +25,13 @@ function ndc_rays(H, W, focal, near, rays_o::AbstractArray, rays_d::AbstractArra
     d_x, d_y, d_z =
         selectdim(rays_d, 1, 1), selectdim(rays_d, 1, 2), selectdim(rays_d, 1, 3)
 
-    o1 = -focal ./ (W / 2) .* o_x ./ o_z
-    o2 = -focal ./ (H / 2) .* o_y ./ o_z
+    o1 = -focal ./ (W * 0.5f0) .* o_x ./ o_z
+    o2 = -focal ./ (H * 0.5f0) .* o_y ./ o_z
     o3 = 1 .+ 2 .* near ./ o_z
 
-    d1 = -focal ./ (W / 2) .* (d_x ./ d_z .- o_x ./ o_z)
-    d2 = -focal ./ (H / 2) .* (d_y ./ d_z .- o_y ./ o_z)
-    d3 = -2 .* near ./ o_z
+    d1 = -focal ./ (W * 0.5f0) .* (d_x ./ d_z .- o_x ./ o_z)
+    d2 = -focal ./ (H * 0.5f0) .* (d_y ./ d_z .- o_y ./ o_z)
+    d3 = -2.0f0 .* near ./ o_z
 
     o_prime = cat(
         reshape(o1, 1, size(o1)...),
@@ -90,7 +90,7 @@ function get_features(H, W, focal, c2w, near, far; ndc = true)
     rays_o, rays_d = get_rays(H, W, focal, c2w)
     rays_o, rays_d = reshape(rays_o, 3, :), reshape(rays_d, 3, :)
     if ndc
-        rays_o, rays_d = ndc_rays(H, W, focal, 1.0, rays_o, rays_d)
+        rays_o, rays_d = ndc_rays(H, W, focal, 1.0f0, rays_o, rays_d)
     end
     n = size(rays_d) |> last
     rays = cat(rays_o, rays_d, rays_d, fill(near, 1, n), fill(far, 1, n); dims = 1)

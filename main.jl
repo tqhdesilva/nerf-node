@@ -3,6 +3,7 @@
 llff_hold = 8 # size of holdout/test set
 
 # %%
+using CUDA
 using Printf
 using DifferentialEquations, DiffEqFlux
 using Pipe: @pipe
@@ -14,6 +15,8 @@ include("helpers.jl")
 include("render.jl")
 include("pymodules.jl")
 include("model.jl")
+
+CUDA.allowscalar(false)
 
 # %%
 images, poses, bounds, render_poses, i_test = PyModules.load_llff.load_llff_data(
@@ -51,29 +54,33 @@ get_features(c2w) = get_features(H, W, f, c2w, near, far)
 train_ray_features =
     @pipe train_poses |> mapslices(get_features, _, dims = [1, 2]) |> reshape(_, 11, :);
 train_rgb = reshape(train_images, 3, :);
-train_dataloader =
-    DataLoader((train_ray_features, train_rgb); batchsize = 32, shuffle = true);
+train_dataloader = DataLoader(
+    (train_ray_features, train_rgb);
+    batchsize = 32,
+    shuffle = true,
+);
 
 # %%
 # define nn
 
-nn = NeRFNODE(10, 4);
-nn_ode = NeuralODE(
-    nn,
-    (0.0f0, 1.0f0),
-    Tsit5(),
-    save_everystep = false,
-    reltol = 1e-3,
-    abstol = 1e-3,
-    save_start = false,
-);
+nn = NeRFNODE(10, 4) |> gpu;
+nn_ode =
+    NeuralODE(
+        nn,
+        (0.0f0, 1.0f0),
+        Tsit5(),
+        save_everystep = false,
+        reltol = 1e-3,
+        abstol = 1e-3,
+        save_start = false,
+    ) |> gpu;
 
 model = Chain(
     raw_to_state_space,
     nn_ode,
     x -> x.u[end], # get final timestep
     x -> x[end-2:end, :], # get rgb only
-);
+) |> gpu;
 
 loss(x, y) = sum((model(x) .- y) .^ 2);
 opt = Flux.Optimiser(ExpDecay(1, 0.1, 250 * 1000), ADAM(5e-4, (0.9, 0.999)));
@@ -91,7 +98,7 @@ cb() = begin
         Flux.stop()
     end
 end
-Flux.train!(loss, params, train_dataloader, opt; cb = cb)
+Flux.train!(loss, params, CuIterator(train_dataloader), opt; cb = cb)
 
 # define a function that takes nn and outputs rgb
 # call train! with Flux.params(nn)
