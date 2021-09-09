@@ -5,17 +5,17 @@ struct PositionalEncoder
     L::Int
 end
 
-(p::PositionalEncoder)(x) = cat(
-    [
-        reshape(sin.(2 .^ i .* π .* x), size(x)[1:end-1]..., 1, size(x)[end]) for
-        i = 0:(p.L-1)
-    ]...,
-    [
-        reshape(cos.(2 .^ i .* π .* x), size(x)[1:end-1]..., 1, size(x)[end]) for
-        i = 0:(p.L-1)
-    ]...;
-    dims = length(size(x)),
-)
+function is_gpu() end
+
+function (p::PositionalEncoder)(x)
+    i = Float32.(collect(0:p.L-1))
+    if isa(x, Union{CuArray,SubArray{Float32,U,V} where {U<:Any,V<:CuArray}})
+        i = i |> gpu
+    end
+    x = reshape(x, 1, size(x)...)
+    return cat(sin.(2.0f0 .^ i .* π .* x), cos.(2.0f0 .^ i .* π .* x); dims = 1)
+end
+
 
 flat(p::PositionalEncoder, x) =
     reshape(p(x), 2 * p.L * prod(size(x)[1:end-1]), size(x)[end])
@@ -35,6 +35,7 @@ struct NeRFNet
     head::Any
 end
 
+# TODO make input shapes dependent on L_o and L_d
 function NeRFNet(L_o::Int, L_d::Int)
     o_encoder = PositionalEncoder(L_o)
     d_encoder = PositionalEncoder(L_d)

@@ -54,11 +54,8 @@ get_features(c2w) = get_features(H, W, f, c2w, near, far)
 train_ray_features =
     @pipe train_poses |> mapslices(get_features, _, dims = [1, 2]) |> reshape(_, 11, :);
 train_rgb = reshape(train_images, 3, :);
-train_dataloader = DataLoader(
-    (train_ray_features, train_rgb);
-    batchsize = 32,
-    shuffle = true,
-);
+train_dataloader =
+    DataLoader((train_ray_features, train_rgb); batchsize = 32, shuffle = true);
 
 # %%
 # define nn
@@ -91,7 +88,7 @@ iter = 0
 
 cb() = begin
     global iter += 1
-    if iter % 10 == 1
+    if iter % 5 == 1
         @printf("Iter: %3d", iter)
     end
     if iter == 20
