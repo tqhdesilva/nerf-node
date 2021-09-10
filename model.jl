@@ -5,8 +5,6 @@ struct PositionalEncoder
     L::Int
 end
 
-function is_gpu() end
-
 function (p::PositionalEncoder)(x)
     i = Float32.(collect(0:p.L-1))
     if isa(x, Union{CuArray,SubArray{Float32,U,V} where {U<:Any,V<:CuArray}})
