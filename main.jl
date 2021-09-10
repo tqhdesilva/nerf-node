@@ -55,7 +55,7 @@ train_ray_features =
     @pipe train_poses |> mapslices(get_features, _, dims = [1, 2]) |> reshape(_, 11, :);
 train_rgb = reshape(train_images, 3, :);
 train_dataloader =
-    DataLoader((train_ray_features, train_rgb); batchsize = 32, shuffle = true);
+    DataLoader((train_ray_features, train_rgb); batchsize = 4096, shuffle = true);
 
 # %%
 # define nn
