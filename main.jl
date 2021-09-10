@@ -1,6 +1,7 @@
 # %%
 # constants config
-llff_hold = 8 # size of holdout/test set
+llff_hold = 8; # size of holdout/test set
+batchsize = 4096
 
 # %%
 using CUDA
@@ -54,8 +55,11 @@ get_features(c2w) = get_features(H, W, f, c2w, near, far)
 train_ray_features =
     @pipe train_poses |> mapslices(get_features, _, dims = [1, 2]) |> reshape(_, 11, :);
 train_rgb = reshape(train_images, 3, :);
-train_dataloader =
-    DataLoader((train_ray_features, train_rgb); batchsize = 4096, shuffle = true);
+train_dataloader = DataLoader(
+    (raw_to_state_space(train_ray_features), train_rgb);
+    batchsize = batchsize,
+    shuffle = true,
+);
 
 # %%
 # define nn
@@ -73,10 +77,9 @@ nn_ode =
     ) |> gpu;
 
 model = Chain(
-    raw_to_state_space,
     nn_ode,
     x -> x.u[end], # get final timestep
-    x -> x[end-2:end, :], # get rgb only
+    x -> view(x, 13:15, :), # get rgb only
 ) |> gpu;
 
 loss(x, y) = sum((model(x) .- y) .^ 2);
