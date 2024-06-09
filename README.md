@@ -1,3 +1,6 @@
+# What this is
+This is an attempt to use neural ode instead of quadrature for NeRF.
+
 # Get Fern Data
 You can just run `cd nerf && sh ./download_example_data.sh && cd ..`, which should download all the necessary data for the fern scene.
 
